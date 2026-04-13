@@ -196,7 +196,39 @@ void BuildSelections()
     s1.hotkey_vk = VK_F1;
     s1.description = L"启动无敌";
     s1.is_checkbox = true;
-    s1.OnCheck = []() { };
+
+    // +8F0FB, :似乎是丢b的丢出时的音效的播放，其中push esi是音效大小, push 53是音效类型，76是miss音效，7D是丢b音效
+    // or word ptr[eax + 02], 01
+    // push eax
+    // push ecx
+    // mov eax, [dat12.bin + 6C2AAC]
+    // mov ecx, [eax + 00000478]
+    // push 64
+    // push 200
+    // push 7D
+    // push 05
+    // call ecx
+    // add esp, 10
+    // +77C3: or word ptr [eax+02],01这个是设置子弹的dead flag
+
+    s1.OnCheck = []() {
+        char bytes[41] = {0x66, 0x83, 0x48, 0x02, 0x01, 0x90, 0x60, 0x8B, 0x05, 0xAC, 0x2A, 0xE1, 0x7A, 0x8B, 0x88, 0x78, 0x04, 0x00, 0x00, 0x6A, 0x64, 0x68, 0x00, 0x02, 0x00, 0x00, 0x6A, 0x7D, 0x6A, 0x05, 0xFF, 0xD1, 0x83, 0xC4, 0x10, 0x61, 0xE9, 0x8E, 0xF8, 0xFA, 0xFF};
+        DWORD codecave = g_game.base + 0x57F11;
+        for (int i = 0; i < 41; i++){
+			DWORD oldProtect;
+			VirtualProtectEx(g_game.hProcess, (LPVOID)(codecave + i),1, PAGE_EXECUTE_READWRITE, &oldProtect);
+            WriteMemory(g_game.hProcess, codecave + i, bytes[i]);
+			VirtualProtectEx(g_game.hProcess, (LPVOID)(codecave + i),1, oldProtect, &oldProtect);
+        }
+        char bytes2[5] = {0xE9,0x49,0x07,0x05,0x00};
+        DWORD code = g_game.base + 0x77C3;
+        for (int i = 0; i < 5; i++) {
+            DWORD oldProtect;
+            VirtualProtectEx(g_game.hProcess, (LPVOID)(code + i), 5, PAGE_EXECUTE_READWRITE, &oldProtect);
+            WriteMemory(g_game.hProcess, code + i, bytes2[i]);
+            VirtualProtectEx(g_game.hProcess, (LPVOID)(code + i), 5, oldProtect, &oldProtect);
+        }
+        };
     s1.OnTick = []() {
         int value = 999999;
         WriteMemory(g_game.hProcess, g_game.base + 0x6B04E0, value);
@@ -204,6 +236,14 @@ void BuildSelections()
     s1.OnUnCheck = []() {
         int value = 0;
         WriteMemory(g_game.hProcess, g_game.base + 0x6B04E0, value);
+        char bytes2[5] = { 0x66, 0x83, 0x48, 0x02, 0x01 };
+        DWORD code = g_game.base + 0x77C3;
+        for (int i = 0; i < 5; i++) {
+            DWORD oldProtect;
+            VirtualProtectEx(g_game.hProcess, (LPVOID)(code + i), 5, PAGE_EXECUTE_READWRITE, &oldProtect);
+            WriteMemory(g_game.hProcess, code + i, bytes2[i]);
+            VirtualProtectEx(g_game.hProcess, (LPVOID)(code + i), 5, oldProtect, &oldProtect);
+        }
         };
     g_selections.push_back(s1);
 
@@ -233,7 +273,7 @@ void BuildSelections()
 
     Selection s4;
     s4.hotkey_vk = VK_F4;
-    s4.description = L"锁Boss血";
+    s4.description = L"锁圣歌血";
     s4.is_checkbox = true;
     s4.OnCheck = []() {};
     s4.OnTick = []() {
@@ -367,7 +407,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     HWND hwnd = CreateWindowExW(
         0,
         L"TrainerWindowClass",
-        L"圣歌练习器（Normal游戏）",
+        L"圣歌练习器（Normal游戏/P1）",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
         100, 100, 480, 220,
         nullptr, nullptr, hInstance, nullptr

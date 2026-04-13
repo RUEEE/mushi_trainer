@@ -2,5 +2,5 @@
   <Configurations>
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="mushi_cheat/mushi_cheat.vcxproj" />
+  <Project Path="mushi_cheat/mushi_cheat.vcxproj" Id="d0147b76-e62c-46e6-b03f-97399ac4bcf1" />
 </Solution>
