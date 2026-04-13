@@ -5,8 +5,6 @@
 #include <functional>
 #include <sstream>
 
-// #pragma comment(lib, "user32.lib")
-// #pragma comment(lib, "gdi32.lib")
 #include <tlhelp32.h>
 
 struct GameContext
